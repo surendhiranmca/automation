@@ -40,6 +40,11 @@ if (shouldConnectMysql) {
       multipleStatements: true
     });
 
+    db.on('error', (dbErr) => {
+      console.warn('MySQL socket error caught safely. Switching to fallback storage:', dbErr.message);
+      useFallbackDb = true;
+    });
+
     db.connect((err) => {
       if (err) {
         console.warn('MySQL server not reachable. Activating smart storage fallback:', err.message);
