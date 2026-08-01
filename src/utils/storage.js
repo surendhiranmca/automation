@@ -1,0 +1,260 @@
+/**
+ * Storage Utilities for localStorage management
+ * Handles all persistence layer operations
+ */
+
+const STORAGE_KEYS = {
+  ROOMS: 'rnl_rooms',
+  PEOPLE: 'rnl_people',
+  LIST_PERIODS: 'rnl_list_periods',
+  CURRENT_PERIOD: 'rnl_current_period',
+  METADATA: 'rnl_metadata',
+  USERS: 'rnl_users'
+};
+
+/**
+ * Initialize storage with default values if not present
+ */
+export const initializeStorage = () => {
+  if (!localStorage.getItem(STORAGE_KEYS.ROOMS)) {
+    localStorage.setItem(STORAGE_KEYS.ROOMS, JSON.stringify([]));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.PEOPLE)) {
+    localStorage.setItem(STORAGE_KEYS.PEOPLE, JSON.stringify([]));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.LIST_PERIODS)) {
+    localStorage.setItem(STORAGE_KEYS.LIST_PERIODS, JSON.stringify([]));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.METADATA)) {
+    localStorage.setItem(STORAGE_KEYS.METADATA, JSON.stringify(getDefaultMetadata()));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.CURRENT_PERIOD)) {
+    localStorage.setItem(STORAGE_KEYS.CURRENT_PERIOD, JSON.stringify(getDefaultCurrentPeriod()));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify([
+      { id: 'admin-001', username: 'admin', password: 'admin', role: 'admin' },
+      { id: 'student-001', username: 'student', password: 'password', role: 'student' }
+    ]));
+  }
+};
+
+/**
+ * Get default metadata structure
+ */
+export const getDefaultMetadata = () => {
+  const today = new Date();
+  const nextUpdate = new Date(today);
+  nextUpdate.setDate(nextUpdate.getDate() + 15);
+
+  const year = nextUpdate.getFullYear();
+  const month = String(nextUpdate.getMonth() + 1).padStart(2, '0');
+  const day = String(nextUpdate.getDate()).padStart(2, '0');
+
+  return {
+    lastUpdateDate: today.toISOString().split('T')[0],
+    nextUpdateDate: `${year}-${month}-${day}`,
+    totalRooms: 0,
+    totalPeople: 0,
+    updateIntervalDays: 15,
+    lastCheckDate: today.toISOString().split('T')[0],
+    appCreatedDate: today.toISOString().split('T')[0]
+  };
+};
+
+/**
+ * Get default current period
+ */
+export const getDefaultCurrentPeriod = () => {
+  const today = new Date();
+  const endDate = new Date(today);
+  endDate.setDate(endDate.getDate() + 14);
+  const nextUpdateDate = new Date(endDate);
+  nextUpdateDate.setDate(nextUpdateDate.getDate() + 1);
+
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+
+  const endYear = endDate.getFullYear();
+  const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+  const endDay = String(endDate.getDate()).padStart(2, '0');
+
+  const nextYear = nextUpdateDate.getFullYear();
+  const nextMonth = String(nextUpdateDate.getMonth() + 1).padStart(2, '0');
+  const nextDay = String(nextUpdateDate.getDate()).padStart(2, '0');
+
+  return {
+    id: generateUUID(),
+    startDate: `${year}-${month}-${day}`,
+    endDate: `${endYear}-${endMonth}-${endDay}`,
+    isActive: true,
+    generatedDate: `${year}-${month}-${day}`,
+    nextUpdateDate: `${nextYear}-${nextMonth}-${nextDay}`,
+    lastUpdateDate: `${year}-${month}-${day}`
+  };
+};
+
+/**
+ * Generate UUID
+ */
+export const generateUUID = () => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
+/**
+ * Get all rooms
+ */
+export const getRooms = () => {
+  const data = localStorage.getItem(STORAGE_KEYS.ROOMS);
+  return data ? JSON.parse(data) : [];
+};
+
+/**
+ * Save rooms
+ */
+export const saveRooms = (rooms) => {
+  localStorage.setItem(STORAGE_KEYS.ROOMS, JSON.stringify(rooms));
+  updateMetadata();
+};
+
+/**
+ * Get all people
+ */
+export const getPeople = () => {
+  const data = localStorage.getItem(STORAGE_KEYS.PEOPLE);
+  return data ? JSON.parse(data) : [];
+};
+
+/**
+ * Save people
+ */
+export const savePeople = (people) => {
+  localStorage.setItem(STORAGE_KEYS.PEOPLE, JSON.stringify(people));
+  updateMetadata();
+};
+
+/**
+ * Get list periods history
+ */
+export const getListPeriods = () => {
+  const data = localStorage.getItem(STORAGE_KEYS.LIST_PERIODS);
+  return data ? JSON.parse(data) : [];
+};
+
+/**
+ * Save list periods
+ */
+export const saveListPeriods = (periods) => {
+  localStorage.setItem(STORAGE_KEYS.LIST_PERIODS, JSON.stringify(periods));
+};
+
+/**
+ * Get current period
+ */
+export const getCurrentPeriod = () => {
+  const data = localStorage.getItem(STORAGE_KEYS.CURRENT_PERIOD);
+  return data ? JSON.parse(data) : getDefaultCurrentPeriod();
+};
+
+/**
+ * Save current period
+ */
+export const saveCurrentPeriod = (period) => {
+  localStorage.setItem(STORAGE_KEYS.CURRENT_PERIOD, JSON.stringify(period));
+};
+
+/**
+ * Get metadata
+ */
+export const getMetadata = () => {
+  const data = localStorage.getItem(STORAGE_KEYS.METADATA);
+  return data ? JSON.parse(data) : getDefaultMetadata();
+};
+
+/**
+ * Save metadata
+ */
+export const saveMetadata = (metadata) => {
+  localStorage.setItem(STORAGE_KEYS.METADATA, JSON.stringify(metadata));
+};
+
+/**
+ * Update metadata counts
+ */
+export const updateMetadata = () => {
+  const metadata = getMetadata();
+  const rooms = getRooms();
+  const people = getPeople();
+
+  metadata.totalRooms = rooms.length;
+  metadata.totalPeople = people.length;
+  metadata.lastCheckDate = new Date().toISOString().split('T')[0];
+
+  saveMetadata(metadata);
+};
+
+/**
+ * Get all users
+ */
+export const getUsers = () => {
+  const data = localStorage.getItem(STORAGE_KEYS.USERS);
+  return data ? JSON.parse(data) : [];
+};
+
+/**
+ * Save users
+ */
+export const saveUsers = (users) => {
+  localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+};
+
+/**
+ * Clear all data (for settings/reset)
+ */
+export const clearAllData = () => {
+  localStorage.removeItem(STORAGE_KEYS.ROOMS);
+  localStorage.removeItem(STORAGE_KEYS.PEOPLE);
+  localStorage.removeItem(STORAGE_KEYS.LIST_PERIODS);
+  localStorage.removeItem(STORAGE_KEYS.CURRENT_PERIOD);
+  localStorage.removeItem(STORAGE_KEYS.METADATA);
+  // Do not remove USERS to preserve login credentials
+  initializeStorage();
+};
+
+/**
+ * Export all data as JSON
+ */
+export const exportAllData = () => {
+  return {
+    rooms: getRooms(),
+    people: getPeople(),
+    listPeriods: getListPeriods(),
+    currentPeriod: getCurrentPeriod(),
+    metadata: getMetadata(),
+    users: getUsers(),
+    exportDate: new Date().toISOString()
+  };
+};
+
+/**
+ * Import data from JSON
+ */
+export const importData = (data) => {
+  try {
+    if (data.rooms) saveRooms(data.rooms);
+    if (data.people) savePeople(data.people);
+    if (data.listPeriods) saveListPeriods(data.listPeriods);
+    if (data.currentPeriod) saveCurrentPeriod(data.currentPeriod);
+    if (data.metadata) saveMetadata(data.metadata);
+    if (data.users) saveUsers(data.users);
+    return true;
+  } catch (error) {
+    console.error('Import error:', error);
+    return false;
+  }
+};

@@ -1,0 +1,263 @@
+.history-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 1rem;
+  border-left: 4px solid var(--primary);
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.history-header:hover {
+  background-color: var(--background);
+}
+
+.history-info {
+  flex: 1;
+}
+
+.history-title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-dark);
+  font-weight: 600;
+}
+
+.history-subtitle {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.history-summary {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.summary-badge {
+  display: inline-block;
+  padding: 0.4rem 0.75rem;
+  background: var(--background);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.expand-btn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: var(--text-light);
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.expand-btn:hover {
+  background: var(--background);
+  color: var(--primary);
+}
+
+.history-body {
+  padding: 1.5rem;
+  border-top: 1px solid var(--border);
+  background: var(--background);
+}
+
+.section-title {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.room-distribution {
+  margin-bottom: 1.5rem;
+}
+
+.room-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+.room-stat {
+  background: white;
+  padding: 0.75rem;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid var(--border);
+}
+
+.room-id {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.room-count {
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.no-data {
+  margin: 0;
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-light);
+  font-size: 0.9rem;
+}
+
+.people-list-preview {
+  margin-bottom: 1.5rem;
+}
+
+.people-preview {
+  background: white;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.person-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.person-item:last-child {
+  border-bottom: none;
+}
+
+.person-name {
+  font-weight: 500;
+  color: var(--text-dark);
+  font-size: 0.9rem;
+}
+
+.person-reg {
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.more-people {
+  margin: 0;
+  padding: 0.75rem;
+  text-align: center;
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.view-details-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.view-details-btn:hover {
+  background: #1e40af;
+  transform: translateY(-1px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .history-header {
+    padding: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .history-summary {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .history-body {
+    padding: 1rem;
+  }
+
+  .room-list {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .history-card {
+    border-radius: 6px;
+    margin-bottom: 0.75rem;
+  }
+
+  .history-header {
+    padding: 0.75rem;
+  }
+
+  .history-title {
+    font-size: 0.95rem;
+  }
+
+  .history-subtitle {
+    font-size: 0.75rem;
+  }
+
+  .summary-badge {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
+  }
+
+  .history-body {
+    padding: 0.75rem;
+  }
+
+  .room-list {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .person-item {
+    padding: 0.5rem;
+  }
+
+  .person-name {
+    font-size: 0.8rem;
+  }
+
+  .person-reg {
+    font-size: 0.75rem;
+  }
+
+  .view-details-btn {
+    padding: 0.6rem;
+    font-size: 0.85rem;
+  }
+}

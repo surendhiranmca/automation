@@ -1,0 +1,202 @@
+import { useState, useEffect, useCallback } from 'react';
+import { generateUUID } from '../utils/storage';
+import { validatePerson } from '../utils/validators';
+import { API_BASE_URL } from '../config/api';
+
+/**
+ * Custom hook for people/person management
+ */
+export const usePeople = () => {
+  const [people, setPeople] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch people from backend API
+  const fetchPeople = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_BASE_URL}/api/people`);
+      const data = await res.json();
+      setPeople(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error fetching people:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPeople();
+  }, [fetchPeople]);
+
+  /**
+   * Add new person
+   */
+  const addPerson = useCallback(async (personData) => {
+    const validation = validatePerson(personData);
+    
+    if (!validation.isValid) {
+      return { success: false, errors: validation.errors };
+    }
+
+    const newPerson = {
+      id: generateUUID(),
+      name: personData.name,
+      roomId: personData.roomId,
+      dob: personData.dob,
+      course: personData.course,
+      assignedDate: new Date().toISOString().split('T')[0],
+      listPeriod: new Date().toISOString().split('T')[0],
+      status: 'active'
+    };
+
+    try {
+      await fetch(`${API_BASE_URL}/api/people`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newPerson)
+      });
+      await fetchPeople();
+      return { success: true, person: newPerson };
+    } catch (error) {
+      console.error('Error adding person:', error);
+      return { success: false, errors: { form: 'Failed to save to database' } };
+    }
+  }, [fetchPeople]);
+
+  /**
+   * Update existing person
+   */
+  const updatePerson = useCallback(async (personId, personData) => {
+    const validation = validatePerson(personData);
+    
+    if (!validation.isValid) {
+      return { success: false, errors: validation.errors };
+    }
+
+    try {
+      await fetch(`${API_BASE_URL}/api/people/${personId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: personData.name,
+          roomId: personData.roomId,
+          dob: personData.dob,
+          course: personData.course,
+          status: personData.status || 'active'
+        })
+      });
+      await fetchPeople();
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating person:', error);
+      return { success: false, errors: { form: 'Failed to update database' } };
+    }
+  }, [fetchPeople]);
+
+  /**
+   * Delete person
+   */
+  const deletePerson = useCallback(async (personId) => {
+    try {
+      await fetch(`${API_BASE_URL}/api/people/${personId}`, {
+        method: 'DELETE'
+      });
+      await fetchPeople();
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting person:', error);
+      return { success: false };
+    }
+  }, [fetchPeople]);
+
+  /**
+   * Transfer person to another room
+   */
+  const transferPerson = useCallback(async (personId, newRoomId) => {
+    try {
+      await fetch(`${API_BASE_URL}/api/people/${personId}/transfer`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId: newRoomId })
+      });
+      await fetchPeople();
+      return { success: true };
+    } catch (error) {
+      console.error('Error transferring person:', error);
+      return { success: false };
+    }
+  }, [fetchPeople]);
+
+  /**
+   * Get person by ID
+   */
+  const getPerson = useCallback((personId) => {
+    return people.find(person => person.id === personId);
+  }, [people]);
+
+  /**
+   * Get people by room ID
+   */
+  const getPeopleByRoom = useCallback((roomId) => {
+    return people.filter(person => person.roomId === roomId);
+  }, [people]);
+
+  /**
+   * Search people
+   */
+  const searchPeople = useCallback((query) => {
+    if (!query || query.trim() === '') {
+      return people;
+    }
+
+    const lowerQuery = query.toLowerCase();
+    return people.filter(person =>
+      person.name.toLowerCase().includes(lowerQuery) ||
+      person.registrationNumber.toLowerCase().includes(lowerQuery)
+    );
+  }, [people]);
+
+  /**
+   * Filter people
+   */
+  const filterPeople = useCallback((filterFn) => {
+    return people.filter(filterFn);
+  }, [people]);
+
+  /**
+   * Get total people count
+   */
+  const getTotalPeople = useCallback(() => {
+    return people.length;
+  }, [people]);
+
+  /**
+   * Get people by status
+   */
+  const getPeopleByStatus = useCallback((status) => {
+    return people.filter(person => person.status === status);
+  }, [people]);
+
+  /**
+   * Get active people count
+   */
+  const getActivePeople = useCallback(() => {
+    return people.filter(person => person.status === 'active');
+  }, [people]);
+
+  return {
+    people,
+    loading,
+    addPerson,
+    updatePerson,
+    deletePerson,
+    transferPerson,
+    getPerson,
+    getPeopleByRoom,
+    searchPeople,
+    filterPeople,
+    getTotalPeople,
+    getPeopleByStatus,
+    getActivePeople
+  };
+};

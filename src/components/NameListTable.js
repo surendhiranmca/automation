@@ -1,0 +1,94 @@
+import React from 'react';
+import { formatDate } from '../utils/dateUtils';
+import './NameListTable.css';
+
+const NameListTable = ({ people, rooms, onEdit, onDelete, onTransfer, selectedId, isAdmin = true }) => {
+  const getRoomName = (roomId) => {
+    const room = rooms.find(r => r.id === roomId);
+    return room ? room.roomNumber : 'Unknown';
+  };
+
+  if (!people || people.length === 0) {
+    return (
+      <div className="empty-state">
+        <p className="empty-icon">👥</p>
+        <p className="empty-message">No people found</p>
+        <p className="empty-subtext">Add a person to get started</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="table-container">
+      <table className="name-list-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Registration #</th>
+            <th>Course</th>
+            <th>DOB</th>
+            <th>Room</th>
+            <th>Assigned Date</th>
+            <th>Status</th>
+            {isAdmin && <th>Actions</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {people.map(person => (
+            <tr
+              key={person.id}
+              className={`table-row ${selectedId === person.id ? 'selected' : ''}`}
+            >
+              <td>
+                <div className="person-name">{person.name}</div>
+              </td>
+              <td>
+                <span className="registration-badge">{person.registrationNumber}</span>
+              </td>
+              <td>{person.course || '-'}</td>
+              <td>{person.dob ? formatDate(person.dob) : 'Not set'}</td>
+              <td className="cell-room">
+                <span className="room-badge">
+                  {getRoomName(person.roomId)}
+                </span>
+              </td>
+              <td className="cell-date">{person.assignedDate}</td>
+              <td>
+                <span className={`status-badge status-${person.status}`}>
+                  {person.status}
+                </span>
+              </td>
+              {isAdmin && (
+                <td className="cell-actions">
+                  <button
+                    className="action-btn btn-edit"
+                    onClick={() => onEdit(person)}
+                    title="Edit"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    className="action-btn btn-transfer"
+                    onClick={() => onTransfer(person)}
+                    title="Transfer"
+                  >
+                    🔄
+                  </button>
+                  <button
+                    className="action-btn btn-delete"
+                    onClick={() => onDelete(person.id)}
+                    title="Delete"
+                  >
+                    🗑️
+                  </button>
+                </td>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default NameListTable;

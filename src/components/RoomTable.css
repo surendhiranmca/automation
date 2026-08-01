@@ -1,0 +1,177 @@
+.table-container {
+  overflow-x: auto;
+  background: white;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.room-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.room-table thead {
+  background: var(--background);
+  border-bottom: 2px solid var(--border);
+}
+
+.room-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-dark);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.room-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.room-table tbody tr:hover {
+  background-color: var(--background);
+}
+
+.room-table tbody tr.selected {
+  background-color: rgba(37, 99, 235, 0.05);
+}
+
+.room-table td {
+  padding: 1rem;
+  color: var(--text-dark);
+  font-size: 0.95rem;
+}
+
+.cell-primary {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.cell-date {
+  color: var(--text-light);
+  font-size: 0.9rem;
+}
+
+.cell-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.btn-edit:hover {
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.btn-delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.3rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.status-active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-inactive {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.empty-state {
+  padding: 3rem 2rem;
+  text-align: center;
+  background: white;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin: 0;
+}
+
+.empty-message {
+  margin: 1rem 0 0.5rem;
+  font-size: 1.1rem;
+  color: var(--text-dark);
+  font-weight: 600;
+}
+
+.empty-subtext {
+  margin: 0;
+  color: var(--text-light);
+  font-size: 0.95rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .room-table th,
+  .room-table td {
+    padding: 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .action-btn {
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .table-container {
+    overflow-x: auto;
+  }
+
+  .room-table {
+    min-width: 600px;
+  }
+
+  .room-table th,
+  .room-table td {
+    padding: 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .cell-actions {
+    gap: 0.3rem;
+  }
+
+  .action-btn {
+    font-size: 0.9rem;
+    padding: 0.3rem 0.4rem;
+  }
+
+  .empty-state {
+    padding: 2rem 1rem;
+  }
+
+  .empty-icon {
+    font-size: 2rem;
+  }
+
+  .empty-message {
+    font-size: 0.95rem;
+  }
+
+  .empty-subtext {
+    font-size: 0.85rem;
+  }
+}
