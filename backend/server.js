@@ -23,73 +23,89 @@ let fallbackDb = {
   people: []
 };
 
-// MySQL Connection
-const db = mysql.createConnection({
-  host: DB_HOST,
-  user: DB_USER,
-  password: DB_PASSWORD,
-  port: DB_PORT,
-  multipleStatements: true
-});
+let db = null;
 
-db.connect((err) => {
-  if (err) {
-    console.warn('MySQL server not reachable. Activating smart storage fallback for Render deployment:', err.message);
+// On cloud hosting (e.g. Render) without explicit MYSQL_HOST, activate fallback storage immediately
+// to prevent 30-second TCP connection timeouts during server startup
+const shouldConnectMysql = (process.env.MYSQL_HOST || process.env.DB_HOST || process.env.NODE_ENV !== 'production');
+
+if (shouldConnectMysql) {
+  try {
+    db = mysql.createConnection({
+      host: DB_HOST,
+      user: DB_USER,
+      password: DB_PASSWORD,
+      port: DB_PORT,
+      connectTimeout: 3000, // 3s timeout
+      multipleStatements: true
+    });
+
+    db.connect((err) => {
+      if (err) {
+        console.warn('MySQL server not reachable. Activating smart storage fallback:', err.message);
+        useFallbackDb = true;
+        return;
+      }
+      console.log('Connected to MySQL server');
+
+      const initSql = `
+        CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`;
+        USE \`${DB_NAME}\`;
+
+        CREATE TABLE IF NOT EXISTS users (
+          id VARCHAR(255) PRIMARY KEY,
+          username VARCHAR(255) NOT NULL UNIQUE,
+          password VARCHAR(255) NOT NULL,
+          role VARCHAR(50) NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS rooms (
+          id VARCHAR(255) PRIMARY KEY,
+          roomNumber VARCHAR(50) NOT NULL,
+          roomName VARCHAR(255) NOT NULL,
+          capacity INT NOT NULL,
+          createdDate VARCHAR(50) NOT NULL,
+          isActive BOOLEAN NOT NULL DEFAULT TRUE
+        );
+
+        CREATE TABLE IF NOT EXISTS people (
+          id VARCHAR(255) PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          registrationNumber VARCHAR(100) NOT NULL,
+          roomId VARCHAR(255) NOT NULL,
+          dob VARCHAR(50),
+          course VARCHAR(100) NOT NULL,
+          assignedDate VARCHAR(50) NOT NULL,
+          listPeriod VARCHAR(50) NOT NULL,
+          status VARCHAR(50) NOT NULL DEFAULT 'active'
+        );
+
+        INSERT IGNORE INTO users (id, username, password, role) VALUES ('admin-001', 'admin', 'admin', 'admin');
+      `;
+
+      db.query(initSql, (initErr) => {
+        if (initErr) {
+          console.error('Error initializing database tables:', initErr.message);
+          useFallbackDb = true;
+        } else {
+          console.log(`Database '${DB_NAME}' and tables ready`);
+        }
+      });
+    });
+  } catch (ex) {
+    console.warn('MySQL initialization failed, using fallback database:', ex.message);
     useFallbackDb = true;
-    return;
   }
-  console.log('Connected to MySQL server');
-
-  const initSql = `
-    CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`;
-    USE \`${DB_NAME}\`;
-
-    CREATE TABLE IF NOT EXISTS users (
-      id VARCHAR(255) PRIMARY KEY,
-      username VARCHAR(255) NOT NULL UNIQUE,
-      password VARCHAR(255) NOT NULL,
-      role VARCHAR(50) NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS rooms (
-      id VARCHAR(255) PRIMARY KEY,
-      roomNumber VARCHAR(50) NOT NULL,
-      roomName VARCHAR(255) NOT NULL,
-      capacity INT NOT NULL,
-      createdDate VARCHAR(50) NOT NULL,
-      isActive BOOLEAN NOT NULL DEFAULT TRUE
-    );
-
-    CREATE TABLE IF NOT EXISTS people (
-      id VARCHAR(255) PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      registrationNumber VARCHAR(100) NOT NULL,
-      roomId VARCHAR(255) NOT NULL,
-      dob VARCHAR(50),
-      course VARCHAR(100) NOT NULL,
-      assignedDate VARCHAR(50) NOT NULL,
-      listPeriod VARCHAR(50) NOT NULL,
-      status VARCHAR(50) NOT NULL DEFAULT 'active'
-    );
-
-    INSERT IGNORE INTO users (id, username, password, role) VALUES ('admin-001', 'admin', 'admin', 'admin');
-  `;
-
-  db.query(initSql, (initErr) => {
-    if (initErr) {
-      console.error('Error initializing database tables:', initErr.message);
-      useFallbackDb = true;
-    } else {
-      console.log(`Database '${DB_NAME}' and tables ready`);
-    }
-  });
-});
+} else {
+  useFallbackDb = true;
+  console.log('Render production environment detected: using instant fallback database.');
+}
 
 // --- AUTHENTICATION ---
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body;
   
-  if (useFallbackDb) {
+  if (useFallbackDb || !db) {
     const user = fallbackDb.users.find(u => u.username === username && u.password === password);
     if (user) {
       return res.json({ success: true, user });
@@ -111,7 +127,7 @@ app.post('/api/auth/login', (req, res) => {
 app.post('/api/auth/student-login', (req, res) => {
   const { registrationNumber, dob } = req.body;
 
-  if (useFallbackDb) {
+  if (useFallbackDb || !db) {
     const person = fallbackDb.people.find(p => p.registrationNumber === registrationNumber);
     if (!person) return res.json({ success: false, message: 'Student not found' });
     if (!person.dob) return res.json({ success: false, message: 'DOB not set for this student' });
@@ -165,7 +181,7 @@ app.post('/api/auth/student-login', (req, res) => {
 
 // --- ROOMS ---
 app.get('/api/rooms', (req, res) => {
-  if (useFallbackDb) {
+  if (useFallbackDb || !db) {
     return res.json(fallbackDb.rooms);
   }
   db.query('SELECT * FROM rooms', (err, results) => {
@@ -177,7 +193,7 @@ app.get('/api/rooms', (req, res) => {
 app.post('/api/rooms', (req, res) => {
   const { id, roomNumber, roomName, capacity, createdDate, isActive } = req.body;
   
-  if (useFallbackDb) {
+  if (useFallbackDb || !db) {
     const newRoom = { id, roomNumber, roomName, capacity, createdDate, isActive };
     fallbackDb.rooms.push(newRoom);
     return res.json({ success: true });
@@ -193,7 +209,7 @@ app.post('/api/rooms', (req, res) => {
 app.put('/api/rooms/:id', (req, res) => {
   const { roomNumber, roomName, capacity, isActive } = req.body;
   
-  if (useFallbackDb) {
+  if (useFallbackDb || !db) {
     const index = fallbackDb.rooms.findIndex(r => r.id === req.params.id);
     if (index !== -1) {
       fallbackDb.rooms[index] = { ...fallbackDb.rooms[index], roomNumber, roomName, capacity, isActive };
@@ -209,7 +225,7 @@ app.put('/api/rooms/:id', (req, res) => {
 });
 
 app.delete('/api/rooms/:id', (req, res) => {
-  if (useFallbackDb) {
+  if (useFallbackDb || !db) {
     fallbackDb.rooms = fallbackDb.rooms.filter(r => r.id !== req.params.id);
     return res.json({ success: true });
   }
@@ -221,7 +237,7 @@ app.delete('/api/rooms/:id', (req, res) => {
 
 // --- PEOPLE ---
 app.get('/api/people', (req, res) => {
-  if (useFallbackDb) {
+  if (useFallbackDb || !db) {
     return res.json(fallbackDb.people);
   }
   db.query('SELECT * FROM people', (err, results) => {
@@ -233,7 +249,7 @@ app.get('/api/people', (req, res) => {
 app.post('/api/people', (req, res) => {
   const { id, name, roomId, dob, course, assignedDate, listPeriod, status } = req.body;
   
-  if (useFallbackDb) {
+  if (useFallbackDb || !db) {
     const nextNum = fallbackDb.people.length + 1;
     const newRegNumber = `DBSM2026${String(nextNum).padStart(4, '0')}`;
     const newPerson = { id, name, registrationNumber: newRegNumber, roomId, dob, course, assignedDate, listPeriod, status: status || 'active' };
@@ -264,7 +280,7 @@ app.post('/api/people', (req, res) => {
 
 app.put('/api/people/:id', (req, res) => {
   const { name, roomId, dob, course, status } = req.body;
-  if (useFallbackDb) {
+  if (useFallbackDb || !db) {
     const index = fallbackDb.people.findIndex(p => p.id === req.params.id);
     if (index !== -1) {
       fallbackDb.people[index] = { ...fallbackDb.people[index], name, roomId, dob, course, status };
@@ -280,7 +296,7 @@ app.put('/api/people/:id', (req, res) => {
 });
 
 app.delete('/api/people/:id', (req, res) => {
-  if (useFallbackDb) {
+  if (useFallbackDb || !db) {
     fallbackDb.people = fallbackDb.people.filter(p => p.id !== req.params.id);
     return res.json({ success: true });
   }
@@ -292,7 +308,7 @@ app.delete('/api/people/:id', (req, res) => {
 
 app.put('/api/people/:id/transfer', (req, res) => {
   const { roomId } = req.body;
-  if (useFallbackDb) {
+  if (useFallbackDb || !db) {
     const index = fallbackDb.people.findIndex(p => p.id === req.params.id);
     if (index !== -1) {
       fallbackDb.people[index].roomId = roomId;
