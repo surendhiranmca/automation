@@ -180,6 +180,21 @@ export const usePeople = () => {
   /**
    * Get active people count
    */
+  const getActivePeopleCount = useCallback(() => {
+    return people.filter(person => person.status === 'active').length;
+  }, [people]);
+
+  /**
+   * Get average people per room
+   */
+  const getAveragePeoplePerRoom = useCallback((totalRooms) => {
+    if (!totalRooms || totalRooms === 0) return 0;
+    return (people.length / totalRooms).toFixed(1);
+  }, [people]);
+
+  /**
+   * Get active people
+   */
   const getActivePeople = useCallback(() => {
     return people.filter(person => person.status === 'active');
   }, [people]);
@@ -197,6 +212,8 @@ export const usePeople = () => {
     filterPeople,
     getTotalPeople,
     getPeopleByStatus,
-    getActivePeople
+    getActivePeople,
+    getActivePeopleCount,
+    getAveragePeoplePerRoom
   };
 };
